@@ -103,27 +103,43 @@ const requestListener = (req,res) =>{
     }else if(req.url.startsWith('/todos/') && req.method =="DELETE"){
         const id = req.url.split('/').pop()
         const index = todos.findIndex(element => element.id ==id)
-        todos.splice(index,1)
-        res.writeHead(200,headers)
-        res.write(JSON.stringify({
-            'status': 'success',
-            'data': todos,
-            'method': 'DELETE-single'
-        }))
-        res.end()
-    }else if(req.url.startsWith('/todos/') && req.method =="PATCH"){
-        req.on('end',()=>{
-            const title = JSON.parse(body).title
-            const id = req.url.split('/').pop()
-            const index = todos.findIndex(element => element.id == id)
-            todos[index].title = title
+        if(index != -1){
+            todos.splice(index,1)
             res.writeHead(200,headers)
             res.write(JSON.stringify({
                 'status': 'success',
                 'data': todos,
-                'method': 'PATCH'
+                'method': 'DELETE-single'
             }))
             res.end()
+        }else{
+            errorHandle(res)
+        }
+    }else if(req.url.startsWith('/todos/') && req.method =="PATCH"){
+        req.on('end',()=>{
+            try{
+                const title = JSON.parse(body).title
+                const id = req.url.split('/').pop()
+                const index = todos.findIndex(element => element.id == id)
+                if(index !== -1 && title !== undefined){
+                    todos[index].title = title
+                    res.writeHead(200,headers)
+                    res.write(JSON.stringify({
+                        'status':'succes',
+                        'method':'PATCH',
+                        'data': todos,
+                        'patched-id': id,
+                        'patched-index': index,
+                        'patched-title': title
+                    }))
+                    res.end()
+            }else{
+                errorHandle(res)
+            }
+            }catch(error){
+                errorHandle(res)
+            }
+
         })
     }
     else{
@@ -133,4 +149,4 @@ const requestListener = (req,res) =>{
 }
 
 const server = http.createServer(requestListener)
-server.listen(8000)
+server.listen(process.env.PORT||8000)
